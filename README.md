@@ -35,6 +35,56 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+# Port Scanner Refactoring
+
+This directory contains the refactored port scanner functionality, broken down into smaller, maintainable files following clean code practices.
+
+## Directory Structure
+
+```
+port-scanner/
+├── _layout.tsx (existing)
+├── index.tsx (main component ~150 lines)
+├── README.md (this file)
+├── components/
+│   ├── NetworkInfo.tsx (~80 lines)
+│   ├── ScanControls.tsx (~60 lines)
+│   ├── ScanProgress.tsx (~50 lines)
+│   ├── DebugLogs.tsx (~100 lines)
+│   └── ResultsList.tsx (~150 lines)
+├── hooks/
+│   ├── useNetworkInfo.ts (~60 lines)
+│   ├── usePortScanner.ts (~180 lines)
+│   └── useDebugLogs.ts (~50 lines)
+├── types/
+│   └── index.ts (~30 lines)
+├── constants/
+│   ├── ports.ts (~50 lines)
+│   └── vulnerabilities.ts (~80 lines)
+└── utils/
+    └── scanners.ts (~160 lines)
+```
+
+## Key Improvements
+
+1. **Separation of Concerns**: Each file has a single responsibility
+2. **Reusable Components**: UI components are decoupled and reusable
+3. **Custom Hooks**: Business logic is encapsulated in hooks
+4. **Type Safety**: All types are properly defined and exported
+5. **Maintainability**: Each file is under 200 lines
+6. **Testability**: Functions and components can be easily unit tested
+
+## Migration Guide
+
+To migrate from the old 912-line file:
+
+1. Create the new directory structure
+2. Copy each code block into its respective file
+3. Update import paths in the main component
+4. Remove the old index.tsx file
+
+All functionality remains exactly the same - this is purely a structural refactoring.
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
