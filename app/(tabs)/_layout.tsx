@@ -1,43 +1,77 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+// app/(tabs)/_layout.tsx
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
+import { Platform } from "react-native";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: "#2196F3",
         headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
+            borderTopWidth: 1,
+            borderTopColor: "#e0e0e0",
+            backgroundColor: "white",
           },
-          default: {},
+          default: {
+            borderTopWidth: 1,
+            borderTopColor: "#e0e0e0",
+            backgroundColor: "white",
+          },
         }),
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Home",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="port-scanner"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Port Scanner",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="scan" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="airplay-scanner"
+        options={{
+          title: "AirPlay",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="wifi" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="bluetooth-scanner"
+        options={{
+          title: "Bluetooth",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="bluetooth" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="chromecast-scanner"
+        options={{
+          title: "Chromecast",
+          headerShown: false,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="tv" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>
