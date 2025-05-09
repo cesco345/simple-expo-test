@@ -143,3 +143,5 @@ export function usePortScanner(networkInfo: NetworkInfo | null) {
     stopScan,
   };
 }
+
+export default usePortScanner;

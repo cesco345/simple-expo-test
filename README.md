@@ -1,84 +1,272 @@
-# Port Scanner App - Phase 1 Completion Report
+# Network Security Scanner
+
+A comprehensive React Native toolkit for discovering and assessing network vulnerabilities across multiple protocols including TCP/IP ports, AirPlay devices, and Bluetooth (coming soon).
 
 ## Project Overview
 
-The Port Scanner is a critical component of our network security toolkit, designed to scan local networks for open ports and identify potential vulnerabilities. Phase 1 focused on establishing a robust foundation with TCP socket scanning capabilities and a modular architecture.
+This application provides specialized scanning tools for security professionals and network administrators to identify potential vulnerabilities in local networks. Built with a modular architecture, the toolkit currently includes Port Scanner and AirPlay Scanner components, with Bluetooth Scanner planned for Phase 3.
 
-## Key Accomplishments in Phase 1
+## Project Structure
 
-### Core Functionality
-
-- **TCP Socket Scanning**: Implemented robust TCP socket scanning using `react-native-tcp-socket`
-- **HTTP Port Detection**: Added specialized HTTP-based detection for web servers
-- **IP Range Generation**: Automated scanning of IP ranges within the local subnet
-- **Batch Processing**: Implemented batched scanning to prevent device overload
-- **Vulnerability Database**: Created an extensible database of known port vulnerabilities
-
-### Technical Solutions
-
-- **iOS Configuration**: Added proper network entitlements and permissions for iOS TCP scanning
-- **Android Compatibility**: Ensured seamless functionality across Android devices
-- **Cross-Platform Adaptations**: Implemented platform-specific optimizations
-- **Performance Monitoring**: Added scan progress tracking and detailed logs
-
-### Architecture Improvements
-
-- **Code Refactoring**: Transformed a monolithic 900+ line file into a modular, maintainable codebase
-- **Separation of Concerns**: Created dedicated directories for hooks, components, types, and utilities
-- **Circular Dependency Resolution**: Resolved complex circular dependency issues
-- **Type Safety**: Implemented comprehensive TypeScript typing throughout the application
-
-## Final Project Structure
+The application follows an Expo Router file-based routing structure with a clean separation between UI components and core functionality:
 
 ```
 app/
-├── _layout.tsx             # Root layout
-├── +not-found.tsx          # Not found screen
-├── (tabs)/                 # Tab navigation folder
-│   ├── _layout.tsx         # Tab navigation layout
-│   ├── index.tsx           # Home screen with scanner options
-│   ├── port-scanner/       # Port Scanner implementation (completed)
-│   ├── airplay-scanner/    # Ready for Phase 2 implementation
-│   ├── bluetooth-scanner/  # Future implementation
-│   ├── chromecast-scanner/ # Future implementation
-│   └── network-info/       # Network information screen
-└── modules/port-scanner/   # Reusable modules for port scanning
-    ├── hooks/              # Custom React hooks
-    ├── types/              # TypeScript type definitions
-    ├── constants/          # Application constants
-    └── utils/              # Utility functions
+├── (tabs)                       # Tab-based navigation
+│   ├── _layout.tsx              # Tab navigation layout
+│   ├── airplay-scanner          # AirPlay Scanner implementation
+│   │   ├── _layout.tsx
+│   │   ├── components
+│   │   │   ├── DebugLogs.tsx    # Log display component
+│   │   │   ├── NetworkInfo.tsx  # Network information display
+│   │   │   ├── ResultsList.tsx  # Scan results display
+│   │   │   ├── ScanControls.tsx # Scan start/stop controls
+│   │   │   └── ScanProgress.tsx # Progress indicator
+│   │   ├── index.tsx            # Main screen component
+│   │   └── utils
+│   │       └── scanners.ts      # AirPlay scanning implementation
+│   ├── bluetooth-scanner        # Phase 3 implementation (upcoming)
+│   │   ├── _layout.tsx
+│   │   └── index.tsx
+│   ├── chromecast-scanner       # Future implementation
+│   │   ├── _layout.tsx
+│   │   └── index.tsx
+│   ├── index.tsx                # Home screen
+│   └── port-scanner             # Port Scanner implementation
+│       ├── _layout.tsx
+│       ├── components           # UI components (same structure as AirPlay)
+│       └── index.tsx            # Main port scanner screen
+├── +not-found.tsx               # 404 page
+├── _layout.tsx                  # Root layout
+├── modal                        # Modal screens
+│   ├── explore.tsx
+│   └── network-info.tsx
+└── modules                      # Core functionality modules
+    ├── airplay-scanner          # AirPlay scanner module
+    │   ├── constants
+    │   │   └── vulnerabilities.ts # Known AirPlay vulnerabilities
+    │   ├── hooks
+    │   │   ├── useAirPlayScanner.ts # Main scanner hook
+    │   │   ├── useDebugLogs.ts      # Logging utilities
+    │   │   └── useNetworkInfo.ts    # Network detection
+    │   └── types
+    │       └── index.ts          # TypeScript type definitions
+    └── port-scanner              # Port scanner module
+        ├── constants
+        │   ├── ports.ts          # Port definitions
+        │   └── vulnerabilities.ts # Known port vulnerabilities
+        ├── hooks
+        │   ├── useDebugLogs.ts    # Logging utilities
+        │   ├── useNetworkInfo.ts  # Network detection
+        │   └── usePortScanner.ts  # Main scanner hook
+        ├── types
+        │   └── index.ts           # TypeScript type definitions
+        └── utils
+            └── scanners.ts        # Port scanning utilities
 ```
 
-## Key Technologies Used
+## Features
+
+### Phase 1: Port Scanner (Completed)
+
+- **TCP Socket Scanning**: Robust TCP socket scanning using `react-native-tcp-socket`
+- **HTTP Port Detection**: Specialized HTTP-based detection for web servers
+- **IP Range Generation**: Automated scanning of IP ranges within the local subnet
+- **Batch Processing**: Batched scanning to prevent device overload
+- **Vulnerability Database**: Extensible database of known port vulnerabilities
+
+### Phase 2: AirPlay Scanner (Completed)
+
+- **Device Discovery**: Multiple methods to find AirPlay devices
+  - mDNS/Zeroconf service discovery
+  - Direct IP scanning with protocol detection
+- **Vulnerability Assessment**: Evaluation of devices for security issues
+  - Non-standard ports (potential protocol vulnerabilities)
+  - Authentication weaknesses
+  - Outdated firmware versions
+- **Device Identification**: Automatic identification of device types
+  - Apple devices (Apple TV, HomePod, etc.)
+  - Third-party devices (Sonos, Bose, etc.)
+
+### Phase 3: Bluetooth Scanner (Upcoming)
+
+- **Bluetooth Device Discovery**
+- **Connection Security Assessment**
+- **Vulnerability Identification**
+- **Device Fingerprinting**
+
+## Technical Implementation
+
+### Core Technologies
 
 - **React Native**: Core application framework
 - **Expo**: Development and deployment platform
-- **React Native TCP Socket**: For direct TCP connections
-- **Expo Router**: For navigation and screen management
+- **Expo Router**: File-based routing system
 - **TypeScript**: For type safety throughout the codebase
+- **React Native TCP Socket**: For direct TCP connections
+- **React Native Zeroconf**: For mDNS/Bonjour service discovery
+
+### Cross-Platform Considerations
+
+The application handles platform-specific differences through careful adaptation:
+
+#### Android
+
+- Standard TCP socket operations
+- Effective mDNS service discovery
+- Smaller batch sizes for optimal scanning
+
+#### iOS
+
+- Network privacy permissions configuration
+- Handling of iOS-specific Bonjour service limitations
+- Adaptations for Zeroconf initialization errors
+- Larger batch sizes for efficient IP scanning
+
+## Scanner Behavior and Unique Characteristics
+
+### Scan Result Differences
+
+When scanning the same network from different devices, you may notice different results. This is normal and occurs because:
+
+1. **Different Starting IPs**: Devices on different IPs scan different ranges
+
+   - Example: A device at 192.168.0.153 scans ~148-163
+   - Example: A device at 192.168.0.139 scans ~134-149
+
+2. **Platform-Specific Optimizations**:
+
+   - Different batch sizes for efficient scanning
+   - Different service discovery implementations
+
+3. **Network Timing and Conditions**:
+   - Device response times can vary
+   - Network conditions may affect discovery success
+
+### AirPlay Scanner Details
+
+The AirPlay Scanner uses a comprehensive approach to device discovery:
+
+1. **mDNS/Zeroconf Discovery**:
+
+   - Scans for `_airplay._tcp.` and `_raop._tcp.` services
+   - Platform-specific implementation with fallbacks for iOS
+   - Processes service information to extract device details
+
+2. **Direct IP Scanning**:
+
+   - Tests common AirPlay ports (7000, 5000, 7100)
+   - Analyzes HTTP headers and responses for AirPlay signatures
+   - Identifies device models, manufacturers, and firmware versions
+
+3. **Vulnerability Detection**:
+   - Identifies non-standard port usage
+   - Detects authentication issues
+   - Flags outdated firmware with known CVEs
+
+### Port Scanner Details
+
+The Port Scanner employs TCP sockets and HTTP connections to identify open ports:
+
+1. **TCP Connection Testing**:
+
+   ```typescript
+   export const scanPortTCP = (
+     host: string,
+     port: number
+   ): Promise<boolean> => {
+     return new Promise((resolve) => {
+       const timeoutId = setTimeout(() => {
+         resolve(false);
+       }, 2000);
+
+       try {
+         const socket = TcpSocket.createConnection({
+           port,
+           host,
+           timeout: 1500,
+         });
+
+         socket.on("connect", () => {
+           clearTimeout(timeoutId);
+           socket.end();
+           resolve(true);
+         });
+
+         // Other event handlers...
+       } catch (error) {
+         clearTimeout(timeoutId);
+         resolve(false);
+       }
+     });
+   };
+   ```
+
+2. **HTTP-Specific Testing**:
+
+   - Special handling for ports 80, 443, and 8080
+   - HTTP request-based detection
+   - Service fingerprinting
+
+3. **Vulnerability Assessment**:
+   - Maps open ports to known vulnerabilities
+   - Provides severity ratings and descriptions
+   - Offers mitigation recommendations
 
 ## Technical Challenges Overcome
+
+### Port Scanner
 
 1. **iOS TCP Socket Configuration**: Fixed permissions and entitlements to allow TCP connections on iOS
 2. **Circular Dependencies**: Resolved complex circular reference issues among hook files
 3. **Module Structure**: Created a clean separation between router pages and module code
-4. **Import Path Management**: Properly configured relative paths to prevent import failures
 
-## Lessons Learned
+### AirPlay Scanner
+
+1. **iOS Zeroconf Challenges**: Handled iOS-specific Bonjour service errors
+   ```
+   NSNetServicesErrorCode = "-72004"
+   NSNetServicesErrorDomain = 10
+   ```
+2. **mDNS Error Recovery**: Implemented graceful fallbacks when mDNS discovery fails
+3. **Device Identification**: Created robust fingerprinting from limited response data
+
+## Usage
+
+### Port Scanner
+
+1. Navigate to the Port Scanner tab
+2. Review your network information
+3. Tap "Start Enhanced Port Scan"
+4. The scanner will automatically discover open ports
+5. View detailed vulnerability information for any open ports
+
+### AirPlay Scanner
+
+1. Navigate to the AirPlay Scanner tab
+2. Review your network information
+3. Tap "Start Network Scan"
+4. The scanner will discover AirPlay devices using multiple methods
+5. View detailed information about each device, including potential vulnerabilities
+
+## Next Steps: Phase 3 Bluetooth Scanner
+
+Building on our successful implementation of the Port Scanner and AirPlay Scanner, Phase 3 will focus on:
+
+1. **Bluetooth Device Discovery**: Implementing efficient discovery of nearby Bluetooth devices
+2. **Security Assessment**: Analyzing connection security parameters and protocols
+3. **Vulnerability Database**: Creating a Bluetooth-specific vulnerability database
+4. **Device Classification**: Identifying device types and potential risks
+
+The modular architecture established in Phases 1 and 2 provides an excellent foundation for implementing these Bluetooth-specific features in Phase 3.
+
+## Technical Lessons
 
 1. **Modular Architecture**: Breaking code into smaller, focused modules dramatically improves maintainability
-2. **Circular Dependencies**: Careful attention to import patterns is crucial to prevent runtime errors
-3. **Platform Specifics**: iOS and Android require different permissions and optimizations for network scanning
-4. **Type Safety**: Strong typing helps catch errors early and improves code quality
+2. **Platform Adaptations**: iOS and Android require different permissions and optimizations for network scanning
+3. **Service Discovery**: Multiple discovery methods provide more robust results than single approaches
+4. **Error Handling**: Graceful fallbacks and detailed error logging improve user experience
 
-## Ready for Phase 2: AirPlay Scanner Implementation
+---
 
-Building on our successful port scanner implementation, Phase 2 will focus on:
-
-1. **AirPlay Vulnerability Detection**: Developing specialized scanning for AirPlay-enabled devices
-2. **AirPlay Protocol Analysis**: Implementing detection of common AirPlay security issues
-3. **Device Fingerprinting**: Identifying AirPlay device models and firmware versions
-4. **Vulnerability Database**: Creating an AirPlay-specific vulnerability database
-5. **Secure Testing Tools**: Developing tools to safely test AirPlay security configurations
-
-The modular architecture established in Phase 1 provides an excellent foundation for implementing these AirPlay-specific features in Phase 2.
+_This project is for educational and professional network assessment purposes only. Always obtain proper authorization before scanning networks._

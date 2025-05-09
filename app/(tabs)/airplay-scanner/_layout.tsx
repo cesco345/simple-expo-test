@@ -1,4 +1,3 @@
-// app/(tabs)/airplay-scanner/_layout.tsx
 import { Stack } from "expo-router";
 import React from "react";
 
@@ -10,7 +9,7 @@ export default function AirPlayScannerLayout() {
         options={{
           title: "AirPlay Scanner",
           headerStyle: {
-            backgroundColor: "#4CAF50",
+            backgroundColor: "#2196F3",
           },
           headerTintColor: "#fff",
         }}

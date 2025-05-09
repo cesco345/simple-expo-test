@@ -40,3 +40,5 @@ export function useNetworkInfo() {
 
   return { networkInfo, fetchNetworkInfo };
 }
+
+export default useNetworkInfo;

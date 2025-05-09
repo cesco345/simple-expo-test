@@ -32,3 +32,5 @@ export function useDebugLogs() {
 
   return { logs, clearLogs, addLog };
 }
+
+export default useDebugLogs;

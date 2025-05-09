@@ -30,3 +30,5 @@ export type CurrentScan = {
   ip: string;
   port: number;
 };
+
+export default {};
