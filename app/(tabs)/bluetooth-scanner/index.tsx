@@ -1,213 +1,279 @@
-// app/(tabs)/bluetooth-scanner.tsx
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useBluetoothScanner } from "../../modules/bluetooth-scanner/hooks/useBluetoothScanner";
+import { useDebugLogs } from "../../modules/bluetooth-scanner/hooks/useDebugLogs";
+import { useNetworkInfo } from "../../modules/bluetooth-scanner/hooks/useNetworkInfo";
+import DebugLogs from "./components/DebugLogs";
+import NetworkInfo from "./components/NetworkInfo";
+import ResultsList from "./components/ResultsList";
+import ScanControls from "./components/ScanControls";
+import ScanProgress from "./components/ScanProgress";
 
 export default function BluetoothScannerScreen() {
-  const router = useRouter();
+  const { logs, addLog, clearLogs } = useDebugLogs();
+  const { networkInfo, refreshNetworkInfo } = useNetworkInfo();
+  const {
+    scanResults,
+    isScanning,
+    progress,
+    currentScan,
+    startScan,
+    stopScan,
+    bluetoothState,
+    isInitialized,
+  } = useBluetoothScanner(networkInfo, addLog);
+
+  const [showLogs, setShowLogs] = useState(true);
+  const [showInfo, setShowInfo] = useState(true);
+
+  // Force network info refresh on load
+  useEffect(() => {
+    refreshNetworkInfo();
+  }, []);
+
+  // Check Bluetooth state when initialized
+  useEffect(() => {
+    if (isInitialized && bluetoothState !== "on") {
+      addLog(
+        `[INFO] Bluetooth is ${bluetoothState}. It must be enabled for scanning.`
+      );
+
+      if (bluetoothState === "off") {
+        Alert.alert(
+          "Bluetooth is Off",
+          "Please enable Bluetooth in your device settings to scan for vulnerabilities.",
+          [{ text: "OK" }]
+        );
+      }
+    }
+  }, [isInitialized, bluetoothState]);
+
+  // Handle scan start/stop
+  const handleScan = () => {
+    if (isScanning) {
+      stopScan();
+    } else {
+      if (bluetoothState !== "on") {
+        Alert.alert(
+          "Bluetooth Required",
+          "Please enable Bluetooth to start scanning.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
+      clearLogs();
+      startScan();
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <ScrollView>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Bluetooth Scanner</Text>
-          <Text style={styles.headerSubtitle}>
-            Coming in Phase 2 of Development
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <Text style={styles.title}>Bluetooth Vulnerability Scanner</Text>
+      <Text style={styles.description}>
+        This tool scans for nearby Bluetooth devices and identifies potential
+        security vulnerabilities.
+      </Text>
+
+      {/* Network Information */}
+      <NetworkInfo networkInfo={networkInfo} />
+
+      {/* Bluetooth Status */}
+      <View style={styles.statusContainer}>
+        <Text style={styles.statusLabel}>Bluetooth Status:</Text>
+        <Text
+          style={[
+            styles.statusValue,
+            bluetoothState === "on" ? styles.statusOn : styles.statusOff,
+          ]}
+        >
+          {bluetoothState === "on"
+            ? "Enabled"
+            : bluetoothState === "off"
+            ? "Disabled"
+            : "Unknown"}
+        </Text>
+      </View>
+
+      {/* Scan Controls */}
+      <ScanControls
+        isScanning={isScanning}
+        onScan={handleScan}
+        disabled={bluetoothState !== "on"}
+      />
+
+      {/* Scan Progress */}
+      {isScanning && (
+        <ScanProgress progress={progress} currentScan={currentScan} />
+      )}
+
+      {/* Toggle Buttons */}
+      <View style={styles.toggleContainer}>
+        <TouchableOpacity
+          style={[styles.toggleButton, showLogs ? styles.toggleActive : {}]}
+          onPress={() => setShowLogs(!showLogs)}
+        >
+          <Text
+            style={[styles.toggleText, showLogs ? styles.toggleTextActive : {}]}
+          >
+            {showLogs ? "Hide Logs" : "Show Logs"}
           </Text>
-        </View>
-
-        <View style={styles.placeholderContainer}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="bluetooth" size={80} color="#3F51B5" />
-          </View>
-          <Text style={styles.placeholderTitle}>Bluetooth Scanner Feature</Text>
-          <Text style={styles.placeholderText}>
-            This feature is currently under development and will be available in
-            Phase 2. The Bluetooth scanner will allow you to discover nearby
-            Bluetooth devices and analyze them for potential security
-            vulnerabilities.
-          </Text>
-
-          <View style={styles.featureList}>
-            <Text style={styles.featureTitle}>Planned Features:</Text>
-
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#3F51B5" />
-              <Text style={styles.featureText}>
-                Scan for Bluetooth devices in range
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#3F51B5" />
-              <Text style={styles.featureText}>
-                Identify device types and capabilities
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#3F51B5" />
-              <Text style={styles.featureText}>
-                Check for outdated protocols and security issues
-              </Text>
-            </View>
-
-            <View style={styles.featureItem}>
-              <Ionicons name="checkmark-circle" size={20} color="#3F51B5" />
-              <Text style={styles.featureText}>
-                Track signal strength and proximity
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.infoBox}>
-            <Ionicons
-              name="information-circle"
-              size={24}
-              color="#3F51B5"
-              style={styles.infoIcon}
-            />
-            <Text style={styles.infoText}>
-              Bluetooth scanning requires appropriate permissions on your
-              device. When this feature is available, you'll be prompted to
-              grant location and Bluetooth permissions for full functionality.
-            </Text>
-          </View>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.push("/")}
+          style={[styles.toggleButton, showInfo ? styles.toggleActive : {}]}
+          onPress={() => setShowInfo(!showInfo)}
         >
-          <Ionicons name="arrow-back" size={18} color="#ffffff" />
-          <Text style={styles.backButtonText}>Back to Home</Text>
+          <Text
+            style={[styles.toggleText, showInfo ? styles.toggleTextActive : {}]}
+          >
+            {showInfo ? "Hide Info" : "Show Info"}
+          </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+      </View>
+
+      {/* Results List */}
+      {scanResults && scanResults.length > 0 && (
+        <View style={styles.resultsSection}>
+          <Text style={styles.sectionTitle}>
+            Detected Devices ({scanResults.length})
+          </Text>
+          <ResultsList results={scanResults} />
+        </View>
+      )}
+
+      {/* Debug Logs */}
+      {showLogs && (
+        <View style={styles.logsContainer}>
+          <Text style={styles.sectionTitle}>Scan Logs</Text>
+          <DebugLogs logs={logs} onClearLogs={clearLogs} />
+        </View>
+      )}
+
+      {/* Vulnerability Info */}
+      {showInfo && (
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>
+            About Bluetooth Vulnerabilities
+          </Text>
+          <Text style={styles.infoText}>
+            Bluetooth vulnerabilities like BlueBorne, BlueSnarfing, and
+            BlueJacking can expose your device to unauthorized access, data
+            theft, and malware. Always keep your device updated, use strong
+            PINs, and disable Bluetooth when not in use.
+          </Text>
+        </View>
+      )}
+
+      {/* Extra padding at the bottom for better scrolling */}
+      <View style={styles.bottomPadding} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f8f9fa",
   },
-  header: {
-    padding: 20,
-    backgroundColor: "#3F51B5",
-    alignItems: "center",
+  contentContainer: {
+    padding: 16,
+    paddingBottom: 100, // Extra padding at the bottom
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    marginTop: 5,
-  },
-  placeholderContainer: {
-    backgroundColor: "white",
-    margin: 16,
-    padding: 20,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    alignItems: "center",
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: "rgba(63, 81, 181, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  placeholderTitle: {
+  title: {
     fontSize: 22,
     fontWeight: "bold",
+    marginBottom: 8,
+    color: "#0066cc",
+  },
+  description: {
+    fontSize: 14,
+    marginBottom: 12,
     color: "#333",
+  },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  statusLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  statusOn: {
+    color: "#4CAF50",
+  },
+  statusOff: {
+    color: "#F44336",
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 10,
+  },
+  toggleButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 20,
+    marginHorizontal: 5,
+  },
+  toggleActive: {
+    backgroundColor: "#007bff",
+  },
+  toggleText: {
+    color: "#333",
+  },
+  toggleTextActive: {
+    color: "#fff",
+  },
+  logsContainer: {
+    minHeight: 200, // Minimum height for logs
     marginBottom: 10,
   },
-  placeholderText: {
+  resultsSection: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  sectionTitle: {
     fontSize: 16,
-    color: "#555",
-    textAlign: "center",
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  featureList: {
-    width: "100%",
-    backgroundColor: "#f9f9f9",
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  featureTitle: {
-    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 15,
-    color: "#333",
+    marginBottom: 8,
+    color: "#0066cc",
   },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  featureText: {
-    fontSize: 16,
-    color: "#333",
-    marginLeft: 10,
-  },
-  infoBox: {
-    backgroundColor: "rgba(63, 81, 181, 0.05)",
-    padding: 15,
+  infoSection: {
+    padding: 12,
+    backgroundColor: "#e9f5ff",
     borderRadius: 8,
-    flexDirection: "row",
-    marginTop: 10,
-    borderLeftWidth: 3,
-    borderLeftColor: "#3F51B5",
-  },
-  infoIcon: {
-    marginRight: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: "#0066cc",
+    marginBottom: 20,
   },
   infoText: {
-    flex: 1,
     fontSize: 14,
     color: "#333",
-    lineHeight: 20,
   },
-  backButton: {
-    backgroundColor: "#3F51B5",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  backButtonText: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    marginLeft: 8,
+  bottomPadding: {
+    height: 100, // Extra padding at the bottom
   },
 });

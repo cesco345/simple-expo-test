@@ -51,8 +51,14 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>We need Bluetooth access to scan for security vulnerabilities in nearby devices</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>We need Bluetooth access to scan for security vulnerabilities in nearby devices</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>This app needs access to scan your local network for vulnerabilities</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need location access because it's required for Bluetooth scanning</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

@@ -1,6 +1,6 @@
+import { AirPlayDevice } from "@/app/modules/airplay-scanner/types";
 import { Platform } from "react-native";
 import Zeroconf from "react-native-zeroconf";
-import { AirPlayDevice } from "../types";
 
 // Singleton for Zeroconf
 let zeroconfInstance: Zeroconf | null = null;
@@ -166,7 +166,7 @@ export function startZeroconfScan(addLog: (message: string) => void): boolean {
       // Single attempt for iOS, no retries
       setTimeout(() => {
         try {
-          zeroconf.scan("_airplay._tcp.", "local.", 5);
+          zeroconf.scan("_airplay._tcp.", "local.", "5");
         } catch (error) {
           addLog(`[INFO] iOS mDNS scan error: ${error}`);
           zeroconfErrorCount++;

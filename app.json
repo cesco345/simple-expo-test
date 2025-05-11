@@ -12,7 +12,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.fpiscani.simpleexpotest",
       "infoPlist": {
-        "NSLocalNetworkUsageDescription": "This app needs access to scan your local network for vulnerabilities"
+        "NSLocalNetworkUsageDescription": "This app needs access to scan your local network for vulnerabilities",
+        "NSBluetoothAlwaysUsageDescription": "We need Bluetooth access to scan for security vulnerabilities in nearby devices",
+        "NSBluetoothPeripheralUsageDescription": "We need Bluetooth access to scan for security vulnerabilities in nearby devices",
+        "NSLocationWhenInUseUsageDescription": "We need location access because it's required for Bluetooth scanning"
       }
     },
     "android": {
@@ -43,7 +46,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "react-native-ble-manager"
     ],
     "experiments": {
       "typedRoutes": true
