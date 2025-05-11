@@ -1,18 +1,91 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { BluetoothScanResult } from "../../../modules/bluetooth-scanner/types";
 
 interface ResultsListProps {
   results: BluetoothScanResult[];
 }
 
+// Map of specific recommendations for each vulnerability type
+const VULNERABILITY_RECOMMENDATIONS = {
+  BLUEJACKING:
+    "Set device to non-discoverable mode when not actively pairing. Decline unsolicited connection requests.",
+  BLUESNARFING:
+    "Use strong PIN codes and ensure your device's firmware is updated. Disable Bluetooth in public places.",
+  BLUEBUGGING:
+    "Update to the latest firmware and only pair devices in secure environments. Regularly audit connected devices.",
+  MISSING_AUTHENTICATION:
+    "Enable secure authentication before connecting devices. Use complex pairing passcodes.",
+  BLUETOOTH_LE_TRACKING:
+    "Use random MAC addresses when available. Disable Bluetooth when not in use to prevent tracking.",
+  WEAK_ENCRYPTION:
+    "Upgrade firmware to the latest version that supports stronger encryption protocols.",
+  UNENCRYPTED_COMMUNICATION:
+    "Only use devices that support encrypted Bluetooth communication. Avoid sensitive data transfers.",
+  MITM: "Verify device identity before pairing. Only pair devices in secure, private locations.",
+  REFLECTION:
+    "Update devices to latest firmware. Avoid using legacy Bluetooth protocols.",
+  OUTDATED_FIRMWARE:
+    "Update device firmware to the latest version to patch known security vulnerabilities.",
+  BLUEPRINTING:
+    "Disable Bluetooth visibility when not in use. Change device name to avoid revealing device model.",
+  MAC_SPOOFING:
+    "Use Bluetooth 4.0+ with address randomization features. Verify device identities before connecting.",
+  NO_NAME_DEVICE:
+    "Avoid connecting to unnamed Bluetooth devices as they may be spoofing legitimate devices.",
+  UNBRANDED_DEVICE:
+    "Use branded devices with established security practices and regular firmware updates.",
+  DEFAULT_CREDENTIALS:
+    "Change default PINs and passwords on all Bluetooth devices. Use complex credentials.",
+  UPnP_ENABLED:
+    "Disable UPnP when not needed. Configure device firewalls to block unauthorized access.",
+  INSECURE_PROTOCOLS:
+    "Update to devices that support secure protocols. Avoid using devices with legacy Bluetooth versions.",
+  MDNS_INFORMATION_DISCLOSURE:
+    "Configure mDNS to limit information disclosure. Use network segmentation.",
+};
+
+// Fallback recommendations for cases where specific ones aren't defined
+const DEFAULT_RECOMMENDATIONS = [
+  "Update firmware if available",
+  "Disable discovery mode when not in use",
+  "Use strong authentication when available",
+];
+
 export default function ResultsList({
   results = [], // Default to empty array
 }: ResultsListProps) {
+  // State to track which cards are expanded
+  const [expandedCards, setExpandedCards] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  // Toggle expanded state for a card
+  const toggleCardExpand = (cardId: string) => {
+    setExpandedCards((prevState) => ({
+      ...prevState,
+      [cardId]: !prevState[cardId],
+    }));
+  };
+
   // Safely check if we have results
   if (!results || results.length === 0) {
     return null;
   }
+
+  // Helper function to get recommendation for a vulnerability
+  const getRecommendation = (vulnId: string): string => {
+    return (
+      VULNERABILITY_RECOMMENDATIONS[vulnId] ||
+      `Update firmware and follow best security practices for this type of vulnerability.`
+    );
+  };
 
   return (
     <View style={styles.resultsContainer}>
@@ -35,36 +108,63 @@ export default function ResultsList({
           securityColor = "#F44336";
         }
 
+        const cardId = `device-${index}`;
+        const isExpanded = !!expandedCards[cardId];
+
         return (
-          <View key={`device-${index}`} style={styles.resultItem}>
-            <View style={styles.resultHeader}>
-              <Text style={styles.deviceName}>
-                {item.device.name || "Unknown Device"}
-              </Text>
-              <Text style={styles.deviceId}>
-                {item.device.id.substring(0, 8)}...
-              </Text>
-            </View>
-
-            <View style={styles.deviceDetails}>
-              <Text style={styles.detailText}>
-                Signal Strength: {item.device.rssi} dBm
-              </Text>
-
-              {item.device.manufacturerData && (
-                <Text style={styles.detailText}>
-                  Manufacturer: {item.device.manufacturerData}
+          <View key={cardId} style={styles.resultItem}>
+            <TouchableOpacity
+              onPress={() => toggleCardExpand(cardId)}
+              style={styles.cardHeader}
+            >
+              <View style={styles.resultHeader}>
+                <Text style={styles.deviceName}>
+                  {item.device.name || "Unknown Device"}
                 </Text>
-              )}
-
-              <View style={styles.securityRow}>
-                <Text style={styles.detailText}>Security Score: </Text>
-                <Text style={[styles.securityScore, { color: securityColor }]}>
-                  {item.securityScore}/100 ({securityLevel})
+                <Text style={styles.deviceId}>
+                  {item.device.id.substring(0, 8)}...
                 </Text>
               </View>
 
-              {item.isVulnerable && (
+              <View style={styles.summaryDetails}>
+                <Text style={styles.detailText}>
+                  Signal Strength: {item.device.rssi} dBm
+                </Text>
+
+                {item.device.manufacturer && (
+                  <Text style={styles.detailText}>
+                    Manufacturer: {item.device.manufacturer}
+                  </Text>
+                )}
+
+                <View style={styles.securityRow}>
+                  <Text style={styles.detailText}>Security Score: </Text>
+                  <Text
+                    style={[styles.securityScore, { color: securityColor }]}
+                  >
+                    {item.securityScore}/100 ({securityLevel})
+                  </Text>
+                </View>
+
+                {item.isVulnerable && (
+                  <Text style={styles.vulnerabilitySummary}>
+                    {item.vulnerabilities.length} Vulnerabilities Detected
+                    <Text style={styles.tapIndicator}>
+                      {" "}
+                      (Tap to {isExpanded ? "collapse" : "expand"})
+                    </Text>
+                  </Text>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Expanded details section */}
+            {isExpanded && item.isVulnerable && (
+              <ScrollView
+                style={styles.expandedDetails}
+                contentContainerStyle={styles.scrollContent}
+                nestedScrollEnabled={true}
+              >
                 <View style={styles.vulnerabilityContainer}>
                   <Text style={styles.vulnerabilityTitle}>
                     Vulnerabilities Detected ({item.vulnerabilities.length})
@@ -79,22 +179,32 @@ export default function ResultsList({
                     </Text>
                   ))}
 
-                  {item.vulnerabilities.map((vulnerability, vulnIndex) => (
-                    <View
-                      key={`vuln-${vulnIndex}`}
-                      style={styles.recommendationContainer}
-                    >
-                      <Text style={styles.recommendationTitle}>
-                        Recommendation for {vulnerability.name}:
+                  {/* Recommendations section */}
+                  {item.vulnerabilities.length > 0 && (
+                    <View style={styles.recommendationsSection}>
+                      <Text style={styles.recommendationsHeader}>
+                        Recommendations:
                       </Text>
-                      <Text style={styles.recommendationText}>
-                        {vulnerability.recommendation}
-                      </Text>
+
+                      {/* Process each vulnerability for its recommendation */}
+                      {item.vulnerabilities.map((vuln, vulnIndex) => (
+                        <View
+                          key={`rec-${vulnIndex}`}
+                          style={styles.recommendationContainer}
+                        >
+                          <Text style={styles.recommendationTitle}>
+                            For {vuln.name || vuln.id}:
+                          </Text>
+                          <Text style={styles.recommendationText}>
+                            • {getRecommendation(vuln.id)}
+                          </Text>
+                        </View>
+                      ))}
                     </View>
-                  ))}
+                  )}
                 </View>
-              )}
-            </View>
+              </ScrollView>
+            )}
           </View>
         );
       })}
@@ -110,15 +220,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 8,
     borderRadius: 8,
-    padding: 12,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "#e0e0e0",
+  },
+  cardHeader: {
+    padding: 12,
   },
   resultHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
+  },
+  summaryDetails: {
+    marginTop: 4,
   },
   deviceName: {
     fontSize: 16,
@@ -129,9 +245,6 @@ const styles = StyleSheet.create({
   deviceId: {
     fontSize: 12,
     color: "#666",
-  },
-  deviceDetails: {
-    marginTop: 4,
   },
   detailText: {
     fontSize: 14,
@@ -147,40 +260,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
   },
+  vulnerabilitySummary: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#e65100",
+    marginTop: 4,
+  },
+  tapIndicator: {
+    fontWeight: "normal",
+    fontSize: 12,
+    fontStyle: "italic",
+    color: "#888",
+  },
+  expandedDetails: {
+    maxHeight: 500, // Increased maximum height
+  },
+  scrollContent: {
+    paddingBottom: 20, // Add padding at bottom to ensure last items are visible
+  },
   vulnerabilityContainer: {
-    marginTop: 8,
-    padding: 8,
+    padding: 12,
     backgroundColor: "#fff8e1",
-    borderRadius: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: "#ffa000",
+    borderTopWidth: 1,
+    borderTopColor: "#ffe0b2",
   },
   vulnerabilityTitle: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#e65100",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   vulnerabilityText: {
     fontSize: 13,
     color: "#555",
-    marginBottom: 2,
+    marginBottom: 6,
+    paddingLeft: 4,
+  },
+  recommendationsSection: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+  },
+  recommendationsHeader: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 8,
   },
   recommendationContainer: {
-    marginTop: 8,
-    padding: 6,
+    marginTop: 6,
+    marginBottom: 8,
+    padding: 8,
     backgroundColor: "#e8f5e9",
     borderRadius: 4,
-    marginBottom: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: "#4caf50",
   },
   recommendationTitle: {
     fontSize: 12,
     fontWeight: "bold",
     color: "#2e7d32",
-    marginBottom: 2,
+    marginBottom: 4,
   },
   recommendationText: {
     fontSize: 12,
     color: "#444",
+    lineHeight: 18,
   },
 });

@@ -283,6 +283,7 @@ export const MAC_OUI_DATABASE: Record<string, string> = {
   "086D41": "Linksys",
   "24F5A2": "Linksys",
   "4C1FCC": "Linksys",
+
   C0C1C0: "Linksys",
   E8FDA0: "Linksys",
 };

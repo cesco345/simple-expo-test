@@ -462,13 +462,27 @@ export function useBluetoothScanner(
             }
           }
 
-          // Check device for vulnerabilities
-          const { vulnerabilityIds, vulnerabilityDetails } =
+          // Check device for vulnerabilities - get recommendations too
+          const { vulnerabilityIds, vulnerabilityDetails, recommendations } =
             checkDeviceVulnerabilities(device, deviceSignature);
 
-          // Get full vulnerability objects
+          // Get full vulnerability objects with recommendations
           const vulnerabilities: BluetoothVulnerability[] = vulnerabilityIds
-            .map((id) => BLUETOOTH_VULNERABILITIES[id])
+            .map((id) => {
+              const vuln = BLUETOOTH_VULNERABILITIES[id];
+              if (vuln) {
+                // Include recommendation from our recommendations object
+                // Make sure id is included in the vulnerability object
+                return {
+                  ...vuln,
+                  id: id, // Explicitly include the id
+                  name: vuln.name || id, // Ensure name is present
+                  recommendation:
+                    recommendations[id] || vuln.recommendation || "",
+                };
+              }
+              return undefined;
+            })
             .filter((v): v is BluetoothVulnerability => v !== undefined);
 
           // Calculate security score

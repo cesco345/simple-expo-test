@@ -56,6 +56,22 @@ export const KNOWN_DEVICES: Record<string, DeviceSignature> = {
   },
 
   // Apple devices
+  "Apple-MacBook": {
+    manufacturer: "Apple",
+    model: "MacBook Pro/Air",
+    modelAliases: ["MacBook", "MBP", "MBA"],
+    identificationPatterns: ["macbook", "mbp", "mba"],
+    vulnerableVersions: ["Big Sur 11.0-11.2", "Monterey 12.0-12.1"],
+    recommendedFirmware: "Latest macOS version",
+    deviceType: DeviceType.LAPTOP,
+    knownMACs: ["00:C6:10", "3C:AB:8E", "A8:5B:78", "90:9B:6F"],
+    knownServices: [
+      "273fad7f-bd38-4156-b7a6-773d273eee21",
+      "1800",
+      "1801",
+      "180A",
+    ],
+  },
   "Apple-AirPods": {
     manufacturer: "Apple",
     model: "AirPods",
@@ -222,6 +238,19 @@ export const KNOWN_DEVICES: Record<string, DeviceSignature> = {
     knownServices: ["_hue._tcp", "_hap._tcp"],
   },
 
+  // Microsoft devices
+  "Microsoft-Device": {
+    manufacturer: "Microsoft",
+    model: "Generic Microsoft Device",
+    modelAliases: ["Surface", "Xbox Controller", "Modern"],
+    identificationPatterns: ["microsoft", "xbox", "surface"],
+    vulnerableVersions: ["*"],
+    recommendedFirmware: "Latest firmware",
+    deviceType: DeviceType.UNKNOWN,
+    knownMACs: ["00:03:FF", "00:17:FA", "58:82:A8", "3C:83:75"],
+    knownServices: [],
+  },
+
   // Generic devices that are commonly found
   "Generic-Earbuds": {
     manufacturer: "Unknown",
@@ -335,6 +364,49 @@ export function identifyDevice(
 
   // Try to identify the device using our knowledge base
 
+  // Check for exact device name matches first (most reliable)
+  if (device.name) {
+    const deviceNameLower = device.name.toLowerCase();
+
+    // Check for Apple MacBook devices
+    if (
+      deviceNameLower.includes("macbook") ||
+      (deviceNameLower.includes("mac") &&
+        context.manufacturerFromMac === "Apple")
+    ) {
+      const macbookSignature = KNOWN_DEVICES["Apple-MacBook"];
+      console.log(`[DEBUG] Device identified as Apple MacBook by name`);
+      return macbookSignature;
+    }
+
+    // Check for specific manufacturer names in device name
+    for (const [key, signature] of Object.entries(KNOWN_DEVICES)) {
+      // If device name contains manufacturer name and model, it's a strong match
+      if (
+        deviceNameLower.includes(signature.manufacturer.toLowerCase()) &&
+        signature.model &&
+        deviceNameLower.includes(signature.model.toLowerCase())
+      ) {
+        console.log(
+          `[DEBUG] Device identified by explicit name match: ${signature.manufacturer} ${signature.model}`
+        );
+        return signature;
+      }
+
+      // Check for model aliases in the name
+      if (signature.modelAliases) {
+        for (const alias of signature.modelAliases) {
+          if (deviceNameLower.includes(alias.toLowerCase())) {
+            console.log(
+              `[DEBUG] Device identified by model alias in name: ${signature.manufacturer} ${signature.model}`
+            );
+            return signature;
+          }
+        }
+      }
+    }
+  }
+
   // 1. Check for exact matches in MAC address known signatures
   for (const [key, signature] of Object.entries(KNOWN_DEVICES)) {
     if (signature.knownMACs) {
@@ -358,18 +430,25 @@ export function identifyDevice(
   // 2. Look for known service UUIDs/types matches
   if (context.serviceUUIDs && context.serviceUUIDs.length > 0) {
     for (const [key, signature] of Object.entries(KNOWN_DEVICES)) {
-      if (signature.knownServices) {
+      if (signature.knownServices && signature.knownServices.length > 0) {
+        // Count matches for service UUIDs
+        let matchCount = 0;
         for (const knownService of signature.knownServices) {
           if (
             context.serviceUUIDs.some((uuid) =>
               uuid.toLowerCase().includes(knownService.toLowerCase())
             )
           ) {
-            console.log(
-              `[DEBUG] Device identified by service UUID as ${signature.manufacturer} ${signature.model}`
-            );
-            return signature;
+            matchCount++;
           }
+        }
+
+        // If multiple services match, this is a stronger signal
+        if (matchCount > 0) {
+          console.log(
+            `[DEBUG] Device identified by service UUID (${matchCount} matches) as ${signature.manufacturer} ${signature.model}`
+          );
+          return signature;
         }
       }
     }
@@ -395,6 +474,7 @@ export function identifyDevice(
   }
 
   // 3. Check for identification patterns in the device name or advertised name
+  // Only if we haven't identified by more reliable methods
   const namesToCheck = [
     context.name || "",
     context.advertisedName || "",
@@ -404,18 +484,34 @@ export function identifyDevice(
     // Create a combined identification text
     const identificationText = namesToCheck.join(" ").toLowerCase();
 
-    for (const [key, signature] of Object.entries(KNOWN_DEVICES)) {
-      // Check if any identification pattern matches
-      const matchFound = signature.identificationPatterns.some((pattern) =>
-        identificationText.includes(pattern.toLowerCase())
-      );
+    // Create a scoring system for better pattern matching
+    let bestMatchScore = 0;
+    let bestMatchSignature: DeviceSignature | null = null;
 
-      if (matchFound) {
-        console.log(
-          `[DEBUG] Device identified by name patterns as ${signature.manufacturer} ${signature.model}`
-        );
-        return signature;
+    for (const [key, signature] of Object.entries(KNOWN_DEVICES)) {
+      let score = 0;
+
+      // Check if any identification pattern matches
+      for (const pattern of signature.identificationPatterns) {
+        if (identificationText.includes(pattern.toLowerCase())) {
+          // Longer patterns are more specific and reliable
+          score += pattern.length;
+        }
       }
+
+      // If this is the best match so far, store it
+      if (score > bestMatchScore) {
+        bestMatchScore = score;
+        bestMatchSignature = signature;
+      }
+    }
+
+    // Only use pattern matching if we got a decent score
+    if (bestMatchScore > 2 && bestMatchSignature) {
+      console.log(
+        `[DEBUG] Device identified by name patterns (score: ${bestMatchScore}) as ${bestMatchSignature.manufacturer} ${bestMatchSignature.model}`
+      );
+      return bestMatchSignature;
     }
   }
 
