@@ -58,6 +58,53 @@ const DEFAULT_RECOMMENDATIONS = [
   "Use strong authentication when available",
 ];
 
+/**
+ * Calculate distance from RSSI using the log-distance path loss model
+ * @param rssi The received signal strength in dBm
+ * @param measuredPower The reference power at 1m (default: -65)
+ * @param environmentalFactor The path loss exponent (default: 2.5)
+ * @returns Estimated distance in meters
+ */
+const calculateDistance = (
+  rssi: number,
+  measuredPower: number = -65,
+  environmentalFactor: number = 2.5
+): number => {
+  if (rssi === 0) {
+    return -1; // Cannot determine
+  }
+
+  // Log-distance path loss model
+  const ratio = rssi / measuredPower;
+  if (ratio < 1) {
+    return Math.pow(ratio, 10);
+  } else {
+    // When RSSI is stronger than reference power (very close proximity)
+    return Math.pow(10, (measuredPower - rssi) / (10 * environmentalFactor));
+  }
+};
+
+/**
+ * Get a human-readable description of the distance
+ * @param distance The calculated distance in meters
+ * @returns A human-readable description
+ */
+const getDistanceDescription = (distance: number): string => {
+  if (distance < 0) {
+    return "Unknown";
+  } else if (distance < 0.5) {
+    return "Immediate (<0.5m)";
+  } else if (distance < 2) {
+    return "Near (0.5-2m)";
+  } else if (distance < 5) {
+    return "Medium (2-5m)";
+  } else if (distance < 10) {
+    return "Far (5-10m)";
+  } else {
+    return "Very Far (>10m)";
+  }
+};
+
 export default function ResultsList({
   results = [], // Default to empty array
 }: ResultsListProps) {
@@ -108,6 +155,10 @@ export default function ResultsList({
           securityColor = "#F44336";
         }
 
+        // Calculate estimated distance based on RSSI
+        const estimatedDistance = calculateDistance(item.device.rssi);
+        const distanceDescription = getDistanceDescription(estimatedDistance);
+
         const cardId = `device-${index}`;
         const isExpanded = !!expandedCards[cardId];
 
@@ -129,6 +180,16 @@ export default function ResultsList({
               <View style={styles.summaryDetails}>
                 <Text style={styles.detailText}>
                   Signal Strength: {item.device.rssi} dBm
+                </Text>
+
+                {/* Add distance estimation */}
+                <Text style={styles.distanceRow}>
+                  <Text style={styles.detailText}>Distance: </Text>
+                  <Text style={styles.distanceText}>{distanceDescription}</Text>
+                  <Text style={styles.detailTextSmall}>
+                    {" "}
+                    (~{estimatedDistance.toFixed(1)}m)
+                  </Text>
                 </Text>
 
                 {item.device.manufacturer && (
@@ -250,6 +311,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#444",
     marginBottom: 2,
+  },
+  detailTextSmall: {
+    fontSize: 12,
+    color: "#666",
+  },
+  distanceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  distanceText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#0066cc",
   },
   securityRow: {
     flexDirection: "row",
